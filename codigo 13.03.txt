@@ -1,0 +1,55 @@
+let video;
+let poseNet;
+let pose;
+let skeleton;
+let pontuation;
+let cow;
+let pig;
+let ram;
+let turkey;
+
+function preload(){
+   cow = loadImage("media/cow.png");
+   pig = loadImage("media/pig.png");
+   ram = loadImage("media/ram.png");
+   turkey = loadImage("media/turkey.png")
+
+}
+
+function setup(){
+    createCanvas(640,480);
+    video = createCapture(VIDEO);
+    video.hide();
+    poseNet = ml5.poseNet(video, modelReady);
+    poseNet.on('pose', gotPoses);
+}
+
+function draw () {
+    //translate(width, 0);
+    //scale(-1, 1); 
+    image (video, 0, 0);
+
+    if (pose) {
+   
+        fill (0, 0, 255);
+        noStroke();
+        ellipse (pose.rightWrist.x, pose.rightWrist.y, 70);
+        ellipse (pose.leftWrist.x, pose.leftWrist.y, 70);
+    }
+
+    textSize(32);
+    fill(0);
+    text('Pontuação: ', 10, 30);
+}
+
+function gotPoses (poses) {
+    // -- console.log (poses);
+    if ( poses.length > 0 ) {
+        pose = poses [0].pose;
+        skeleton = poses [0].skeleton;
+    }
+}
+
+function modelReady () {
+    console.log ('poseNet ready');
+}

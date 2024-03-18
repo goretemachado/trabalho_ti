@@ -1,0 +1,127 @@
+// Variáveis globais
+let avatar; // Objeto do avatar
+let animals = []; // Array para armazenar os objetos dos animais
+let score = 0; // Pontuação inicial do jogador
+let gameState = "playing"; // Estado do jogo: "playing" ou "gameover"
+
+function setup() {
+    createCanvas(640, 480);
+  
+    // Inicialização do avatar
+    avatar = new Avatar(width / 2, height - 50);
+  
+    // Inicialização dos animais
+    spawnAnimals();
+}
+
+function draw() {
+    background(220);
+  
+    if (gameState === "playing") {
+        // Atualização e exibição do avatar
+        avatar.update();
+        avatar.display();
+    
+        // Atualização e exibição dos animais
+        for (let animal of animals) {
+            animal.update();
+            animal.display();
+        
+            // Verificar colisões entre o avatar e os animais
+            if (avatar.hits(animal)) {
+                gameState = "gameover"; // Mudar para o estado de game over
+            }
+        }
+        
+        // Atualização da pontuação
+        score++;
+        textAlign(RIGHT);
+        textSize(20);
+        fill(0);
+        text("Pontuação: " + score, width - 20, 30);
+    } 
+    else if (gameState === "gameover") {
+        // Exibição da tela de game over
+        textAlign(CENTER);
+        textSize(40);
+        fill(255, 0, 0);
+        text("Fim de jogo!", width / 2, height / 2 - 50);
+        textSize(20);
+        text("Pontuação final: " + score, width / 2, height / 2);
+        textSize(16);
+        text("Pressione R para recomeçar", width / 2, height / 2 + 50);
+    }
+}
+
+function keyPressed() {
+    // Reiniciar o jogo quando pressionar R após o game over
+    if (key === 'r' || key === 'R') {
+        if (gameState === "gameover") {
+        resetGame();
+        }
+    }
+}
+
+function spawnAnimals() {
+    // Implemente a função para gerar animais aleatórios na tela
+    // Use a função random() para controlar a aleatoriedade
+}
+
+function resetGame() {
+    // Reiniciar variáveis globais
+    score = 0;
+    gameState = "playing";
+    
+    // Reiniciar posição e estado dos objetos do jogo
+    avatar.reset();
+    animals = [];
+    spawnAnimals();
+}
+
+// ------------------------------------------------------------------------------------------------------------------------------- //
+
+// Definição da classe Avatar
+class Avatar {
+    constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.speed = 5;
+        // Adicione propriedades para personalização do avatar, se necessário
+    }
+    
+    update() {
+        // Atualize a posição do avatar com base na entrada do usuário
+    }
+    
+    display() {
+        // Desenhe o avatar na tela
+    }
+    
+    hits(animal) {
+        // Verifique se o avatar colide com o animal
+        // Implemente a lógica de colisão adequada
+    }
+    
+    reset() {
+        // Reinicie a posição do avatar
+    }
+}
+
+// ------------------------------------------------------------------------------------------------------------------------------- //
+
+// Definição da classe Animal
+class Animal {
+    constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        // Adicione propriedades para personalização do animal, se necessário
+    }
+    
+    update() {
+        // Atualize a posição do animal
+    }
+    
+    display() {
+        // Desenhe o animal na tela
+    }
+}
