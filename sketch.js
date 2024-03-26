@@ -3,6 +3,9 @@ let video;
 let poseNet;
 let pose;
 
+let adjustedRightWristX = 0;
+let adjustedLeftWristX = 0;
+
 // Variáveis para armazenar o esqueleto da pose e a pontuação do jogador
 let score = 0; // Pontuação inicial do jogador
 
@@ -10,21 +13,30 @@ let score = 0; // Pontuação inicial do jogador
 let farmImage;
 
 // Variáveis para armazenar as imagens dos animais
-let cow;
-let pig;
-let ram;
-let turkey;
-let chick;
-let duck;
-let hen;
-let sheep;
+let cow, pig, ram, turkey, chick, duck, hen, sheep;
 
-let animals = []; // Inicializa o array de animais
+// Inicializa o array de animais
+let animals = [];
+
+let obstacle;
+let obstacleX;
+let obstacleY;
+//let time = 10000;
+
+let obstacleScale = 0.1; // Fator de escala inicial do obstáculo
+let obstacleMaxScale = 1.0; // Fator de escala máximo do obstáculo
+
+let gameOver = false; // Flag for game-over state
+
+let keyword = "esa";
+let speechRec;
 
 function preload(){
 
-    // Carrega a imagem da fazenda
-    farmImage = loadImage("media/smart-farm.png");
+    // Carrega a imagem da quinta
+    farmImage = loadImage("media/smart-farm2.png");
+
+    grass = loadImage("media/grass.png");
 
     // Carrega as imagens dos animais
     cow = loadImage("media/cow.png");
@@ -35,6 +47,8 @@ function preload(){
     duck = loadImage("media/duck.png");
     hen = loadImage("media/hen.png");
     sheep = loadImage("media/sheep.png");
+
+    obstacle = loadImage("media/fire.png");
 }
 
 function setup(){
@@ -54,63 +68,27 @@ function setup(){
     // Define uma função para ser chamada sempre que uma pose for detectada
     poseNet.on('pose', gotPoses);
 
-    // Redimensiona a imagem da fazenda para 100x100 pixels
-    farmImage.resize(100, 100);
+    let lang = navigator.language || "pt-PT";
+    speechRec = new p5.SpeechRec(lang, gotSpeech);
+    let continuous = true;
+    let interim = true;
+    speechRec.start(continuous, interim);
 
-    // Adiciona os animais ao array de animais
-    for (let i = 0; i < 5; i++) { // Adiciona 5 animais, você pode ajustar esse número conforme necessário
-        let randomIndex = int(random(0, 8)); // Escolhe um índice aleatório de 0 a 7
-        let animal;
-        switch (randomIndex) { // Seleciona uma imagem de animal com base no índice aleatório
-            case 0:
-                animal = cow;
-                break;
-            case 1:
-                animal = pig;
-                break;
-            case 2:
-                animal = ram;
-                break;
-            case 3:
-                animal = turkey;
-                break;
-            case 4:
-                animal = chick;
-                break;
-            case 5:
-                animal = duck;
-                break;
-            case 6:
-                animal = hen;
-                break;
-            case 7:
-                animal = sheep;
-                break;
-        }
 
-        // Ajusta a posição aleatória para garantir que o animal fique dentro dos limites do canvas
-        let x = random(width - animal.width); // Posição x aleatória dentro dos limites do canvas
-        let y = random(height - animal.height); // Posição y aleatória dentro dos limites do canvas
-        
-        // Verifica se a posição do animal colide com a área da pontuação
-        let padding = 60; // Espaço de preenchimento ao redor da pontuação
-        if (x < padding && x + animal.width > width - padding && y < padding && y + animal.height > height - padding) {
-            // Se a posição colidir com a área da pontuação, reposiciona o animal
-            x = random(padding, width - animal.width - padding);
-            y = random(padding, height - animal.height - padding);
-        }
+    // Redimensiona a imagem da quinta para 100x100 pixels
+    farmImage.resize(150, 150);
 
-        let animalObj = {
-            image: animal,
-            x: x,
-            y: y
-        };
-        animals.push(animalObj);
-    }
+    populateAnimals();
+
+    // Defina a posição inicial do obstáculo
+    obstacleX = random(width/2);
+    obstacleY = random(height/2);
+
 }
 
 function draw () {
 
+    if (!gameOver) {
     // Limpa o fundo do canvas com a cor branca
     background(255);
     
@@ -131,17 +109,19 @@ function draw () {
 
     // Se uma pose foi detectada
     if (pose) {
-        // Desenha círculos nas posições dos pulsos direito e esquerdo
-        fill (0, 0, 255);
+        // Define as novas posições suavizadas dos pulsos
+        let targetRightWristX = width - pose.rightWrist.x;
+        let targetLeftWristX = width - pose.leftWrist.x;
+
+        // Suaviza as posições dos pulsos em direção às novas posições usando lerp
+        adjustedRightWristX = lerp(adjustedRightWristX, targetRightWristX, 0.1);
+        adjustedLeftWristX = lerp(adjustedLeftWristX, targetLeftWristX, 0.1);
+
+        // Desenha os círculos suavizados nos pulsos
+        fill(0, 0, 255);
         noStroke();
-
-        // Ajusta as coordenadas dos pulsos para refletir a espelhação horizontal
-        let adjustedRightWristX = width - pose.rightWrist.x;
-        let adjustedLeftWristX = width - pose.leftWrist.x;
-
-        // Desenha as bolas nos pulsos ajustadas
-        ellipse (adjustedRightWristX, pose.rightWrist.y, 70);
-        ellipse (adjustedLeftWristX, pose.leftWrist.y, 70);
+        ellipse(adjustedRightWristX, pose.rightWrist.y, 30);
+        ellipse(adjustedLeftWristX, pose.leftWrist.y, 30);
     }
     
     /* Desenha um retângulo atrás do texto para destacá-lo*/
@@ -153,19 +133,63 @@ function draw () {
     fill(0); // Define a cor de preenchimento para o texto
     text('Pontuação: ' + score, 20, 40); // Desenha o texto
 
+    image(grass, width - grass.width, height - grass.height);
+
     // Desenha a imagem da fazenda no canto inferior direito do canvas
     image(farmImage, width - farmImage.width, height - farmImage.height);
 
     // Desenha os animais na tela
     for (let i = 0; i < animals.length; i++) {
         let animal = animals[i];
-        console.log("Desenhando animal", i, "em x:", animal.x, "y:", animal.y);
-        console.log("Imagem do animal:", animal.image);
         image(animal.image, animal.x, animal.y);
+
+        // Move the animal
+        animal.y += 0.2;
+
+        // Check if the animal has left the screen
+        if (animal.y > height) {
+            animals.splice(i, 1); // Remove the animal from the array
+            i--; // Decrement i to account for the shifted array elements
+            console.log("Animal removed. New animals array length:", animals.length);
+        }
     }
 
     checkCollisions();
 
+    let obstacleWidth = obstacle.width * obstacleScale;
+    let obstacleHeight = obstacle.height * obstacleScale;
+
+    image(obstacle, obstacleX, obstacleY, obstacleWidth, obstacleHeight);
+
+    if (obstacleScale < obstacleMaxScale) {
+        obstacleScale += 0.0001; // Ajuste a velocidade de crescimento conforme necessário
+    }
+
+    checkObstacleCollision()
+
+    if (animals.length === 0) {
+        gameOver = true;
+    }
+    } else {
+        background(0); // Black background or choose a different color
+        fill(255); // White text
+        textSize(32);
+        textAlign(CENTER, CENTER);
+        text("Game Over!", width / 2, height / 2);
+        drawRestartButton();
+    }
+}
+
+function gotSpeech() {
+    if (speechRec.resultValue) {
+       let spokenWord = speechRec.resultString.toLowerCase();
+       console.log(spokenWord); // Converte para minúsculas para facilitar a comparação
+       if (spokenWord === keyword) {
+         // Se a palavra-chave correspondente for falada, redefine a posição do obstáculo
+         obstacleX = -10000; // Mova o obstáculo para fora da tela
+         obstacleY = -10000;
+       }
+     }
 }
 
 function gotPoses (poses) {
@@ -201,7 +225,7 @@ function checkCollisions() {
                 let distanceLeft = dist(width - pose.leftWrist.x, pose.leftWrist.y, animal.x + animal.image.width / 2, animal.y + animal.image.height / 2);
 
                 // Define a distância de colisão
-                let collisionDistance = 35; // Ajuste conforme necessário
+                let collisionDistance = 35;
 
                 // Verifica se houve colisão com o pulso direito
                 if (distanceRight < collisionDistance) {
@@ -222,5 +246,108 @@ function checkCollisions() {
                 }
             }
         }
+    }
+}
+
+function checkObstacleCollision() {
+    // Verifica se pose está definido
+    if (pose) {
+        // Verifica se as propriedades rightWrist e leftWrist estão definidas
+        if (pose.rightWrist && pose.leftWrist) {
+            // Calcula a distância entre os pulsos e o centro do obstáculo
+            let distanceRight = dist(width - pose.rightWrist.x, pose.rightWrist.y, obstacleX + (obstacle.width * obstacleScale) / 2, obstacleY + (obstacle.height * obstacleScale) / 2);
+            let distanceLeft = dist(width - pose.leftWrist.x, pose.leftWrist.y, obstacleX + (obstacle.width * obstacleScale) / 2, obstacleY + (obstacle.height * obstacleScale) / 2);
+
+            // Define a distância de colisão
+            let collisionDistance = 35;
+
+            // Verifica se houve colisão com o pulso direito
+            if (distanceRight < collisionDistance || distanceLeft < collisionDistance) {
+                // Se houver colisão, diminui a pontuação
+                score--;
+                
+                // Ajuste aqui para outras ações após a colisão, se necessário
+                
+                // Saia da função após detectar uma colisão para evitar colisões múltiplas em um único quadro
+                return;
+            }
+        }
+    }
+}
+
+function drawRestartButton() {
+    // Draw a simple restart button
+    fill(255, 0, 0); // Red button
+    rect(width / 2 - 50, height / 2 + 50, 100, 40); // Adjust size and position as needed
+    fill(255); // White text
+    textSize(20);
+    text("Restart", width / 2, height / 2 + 70);
+}
+
+// Add mousePressed function to handle button clicks
+function mousePressed() {
+    // Check if the mouse is within the restart button bounds
+    if (gameOver && mouseX >= width / 2 - 50 && mouseX <= width / 2 + 50 && mouseY >= height / 2 + 50 && mouseY <= height / 2 + 90) {
+        restartGame();
+    }
+}
+
+function restartGame() {
+    // Reset game state
+    gameOver = false;
+    score = 0; // Reset score
+    obstacleScale = 0.1; // Reset obstacle scale
+    // Reset obstacle position to a new random location
+    obstacleX = random(width / 2);
+    obstacleY = random(height / 2);
+
+    // Re-populate animals array to restart the game with animals on the screen
+    populateAnimals(); // Using a function to populate the animals makes the code more maintainable
+
+    // Optionally, you can reset or reinitialize other components or states specific to your game
+    // For example, if you had a timer or a specific game mode, you would reset it here
+    // Note: There's no need to reset PoseNet itself as it continuously tracks poses in real-time
+}
+
+function populateAnimals() {
+    animals = []; // Clear the array before populating
+    for (let i = 0; i < 10; i++) {
+        let randomIndex = int(random(0, 8)); // Assuming you have 8 different animal images
+        let animalImage;
+        switch (randomIndex) {
+            case 0:
+                animalImage = cow;
+                break;
+            case 1:
+                animalImage = pig;
+                break;
+            case 2:
+                animalImage = ram;
+                break;
+            case 3:
+                animalImage = turkey;
+                break;
+            case 4:
+                animalImage = chick;
+                break;
+            case 5:
+                animalImage = duck;
+                break;
+            case 6:
+                animalImage = hen;
+                break;
+            case 7:
+                animalImage = sheep;
+                break;
+        }
+        let x = random(width - animalImage.width); // Ensure animal is placed within canvas
+        let y = random(height - animalImage.height);
+
+        let animalObj = {
+            image: animalImage,
+            x: x,
+            y: y
+        };
+        animals.push(animalObj);
     }
 }
