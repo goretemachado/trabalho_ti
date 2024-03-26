@@ -26,7 +26,7 @@ let obstacleY;
 let obstacleScale = 0.1; // Fator de escala inicial do obstáculo
 let obstacleMaxScale = 1.0; // Fator de escala máximo do obstáculo
 
-let gameOver = false; // Flag for game-over state
+let gameOver = false; // Sinalizador para o estado de fim de jogo
 
 let keyword = "esa";
 let speechRec;
@@ -74,7 +74,6 @@ function setup(){
     let interim = true;
     speechRec.start(continuous, interim);
 
-
     // Redimensiona a imagem da quinta para 100x100 pixels
     farmImage.resize(150, 150);
 
@@ -89,93 +88,93 @@ function setup(){
 function draw () {
 
     if (!gameOver) {
-    // Limpa o fundo do canvas com a cor branca
-    background(255);
-    
-    // Salva o estado atual do sistema de transformação
-    push();
+        // Limpa o fundo do canvas com a cor branca
+        background(255);
+        
+        // Salva o estado atual do sistema de transformação
+        push();
 
-        // Move a origem para o canto superior direito do vídeo da webcam
-        translate(video.width, 0);
+            // Move a origem para o canto superior direito do vídeo da webcam
+            translate(video.width, 0);
 
-        // Inverte a direção do vídeo horizontalmente
-        scale(-1, 1);
+            // Inverte a direção do vídeo horizontalmente
+            scale(-1, 1);
 
-        // Desenha o vídeo da webcam no canvas, agora espelhado horizontalmente
-        image (video, 0, 0);
+            // Desenha o vídeo da webcam no canvas, agora espelhado horizontalmente
+            image (video, 0, 0);
 
-    // Restaura o estado anterior do sistema de transformação
-    pop();
+        // Restaura o estado anterior do sistema de transformação
+        pop();
 
-    // Se uma pose foi detectada
-    if (pose) {
-        // Define as novas posições suavizadas dos pulsos
-        let targetRightWristX = width - pose.rightWrist.x;
-        let targetLeftWristX = width - pose.leftWrist.x;
+        // Se uma pose foi detectada
+        if (pose) {
+            // Define as novas posições suavizadas dos pulsos
+            let targetRightWristX = width - pose.rightWrist.x;
+            let targetLeftWristX = width - pose.leftWrist.x;
 
-        // Suaviza as posições dos pulsos em direção às novas posições usando lerp
-        adjustedRightWristX = lerp(adjustedRightWristX, targetRightWristX, 0.1);
-        adjustedLeftWristX = lerp(adjustedLeftWristX, targetLeftWristX, 0.1);
+            // Suaviza as posições dos pulsos em direção às novas posições usando lerp
+            adjustedRightWristX = lerp(adjustedRightWristX, targetRightWristX, 0.1);
+            adjustedLeftWristX = lerp(adjustedLeftWristX, targetLeftWristX, 0.1);
 
-        // Desenha os círculos suavizados nos pulsos
-        fill(0, 0, 255);
-        noStroke();
-        ellipse(adjustedRightWristX, pose.rightWrist.y, 30);
-        ellipse(adjustedLeftWristX, pose.leftWrist.y, 30);
-    }
-    
-    /* Desenha um retângulo atrás do texto para destacá-lo*/
-    let textSizeVal = 25; // Tamanho do texto
-    textSize(textSizeVal); // Define o tamanho do texto
-    let textWidthVal = textWidth('Pontuação: ' + score); // Calcula a largura do texto
-    fill(255); // Define a cor de preenchimento para o retângulo
-    rect(10, 10, textWidthVal + 20, textSizeVal + 10); // Desenha o retângulo
-    fill(0); // Define a cor de preenchimento para o texto
-    text('Pontuação: ' + score, 20, 40); // Desenha o texto
-
-    image(grass, width - grass.width, height - grass.height);
-
-    // Desenha a imagem da fazenda no canto inferior direito do canvas
-    image(farmImage, width - farmImage.width, height - farmImage.height);
-
-    // Desenha os animais na tela
-    for (let i = 0; i < animals.length; i++) {
-        let animal = animals[i];
-        image(animal.image, animal.x, animal.y);
-
-        // Move the animal
-        animal.y += 0.2;
-
-        // Check if the animal has left the screen
-        if (animal.y > height) {
-            animals.splice(i, 1); // Remove the animal from the array
-            i--; // Decrement i to account for the shifted array elements
-            console.log("Animal removed. New animals array length:", animals.length);
+            // Desenha os círculos suavizados nos pulsos
+            fill(0, 0, 255);
+            noStroke();
+            ellipse(adjustedRightWristX, pose.rightWrist.y, 30);
+            ellipse(adjustedLeftWristX, pose.leftWrist.y, 30);
         }
-    }
+        
+        /* Desenha um retângulo atrás do texto para destacá-lo*/
+        let textSizeVal = 25; // Tamanho do texto
+        textSize(textSizeVal); // Define o tamanho do texto
+        let textWidthVal = textWidth('Pontuação: ' + score); // Calcula a largura do texto
+        fill(255); // Define a cor de preenchimento para o retângulo
+        rect(10, 10, textWidthVal + 20, textSizeVal + 10); // Desenha o retângulo
+        fill(0); // Define a cor de preenchimento para o texto
+        text('Pontuação: ' + score, 20, 40); // Desenha o texto
 
-    checkCollisions();
+        image(grass, width - grass.width, height - grass.height);
 
-    let obstacleWidth = obstacle.width * obstacleScale;
-    let obstacleHeight = obstacle.height * obstacleScale;
+        // Desenha a imagem da fazenda no canto inferior direito do canvas
+        image(farmImage, width - farmImage.width, height - farmImage.height);
 
-    image(obstacle, obstacleX, obstacleY, obstacleWidth, obstacleHeight);
+        // Desenha os animais na tela
+        for (let i = 0; i < animals.length; i++) {
+            let animal = animals[i];
+            image(animal.image, animal.x, animal.y);
+        
+            // Move o animal
+            animal.y += 0.2;
+        
+            // Verifica se o animal saiu do ecrã
+            if (animal.y > height) {
+                animals.splice(i, 1); // Remove o animal do array
+                i--; // Decrementa i para contabilizar os elementos do array deslocados
+                console.log("Animal removido. Novo comprimento do array de animais:", animals.length);
+            }
+        }
 
-    if (obstacleScale < obstacleMaxScale) {
-        obstacleScale += 0.0001; // Ajuste a velocidade de crescimento conforme necessário
-    }
+        checkCollisions();
 
-    checkObstacleCollision()
+        let obstacleWidth = obstacle.width * obstacleScale;
+        let obstacleHeight = obstacle.height * obstacleScale;
 
-    if (animals.length === 0) {
-        gameOver = true;
-    }
+        image(obstacle, obstacleX, obstacleY, obstacleWidth, obstacleHeight);
+
+        if (obstacleScale < obstacleMaxScale) {
+            obstacleScale += 0.0001; // Ajuste a velocidade de crescimento conforme necessário
+        }
+
+        checkObstacleCollision()
+
+        if (animals.length === 0) {
+            gameOver = true;
+        }
     } else {
-        background(0); // Black background or choose a different color
-        fill(255); // White text
+        background(0); // Fundo preto ou escolha uma cor diferente
+        fill(255); // Texto branco
         textSize(32);
         textAlign(CENTER, CENTER);
-        text("Game Over!", width / 2, height / 2);
+        text("Fim do jogo!", width / 2, height / 2);
         drawRestartButton();
     }
 }
@@ -276,43 +275,41 @@ function checkObstacleCollision() {
 }
 
 function drawRestartButton() {
-    // Draw a simple restart button
-    fill(255, 0, 0); // Red button
-    rect(width / 2 - 50, height / 2 + 50, 100, 40); // Adjust size and position as needed
-    fill(255); // White text
+    // Desenhar um botão simples de recomeçar
+    fill(255, 0, 0); // Botão vermelho
+    rect(width / 2 - 50, height / 2 + 50, 100, 40); // Ajustar tamanho e posição conforme necessário
+    fill(255); // Texto branco
     textSize(20);
-    text("Restart", width / 2, height / 2 + 70);
+    text("Recomeçar", width / 2, height / 2 + 70);
 }
 
-// Add mousePressed function to handle button clicks
+// A função mousePressed lida com cliques de botão
 function mousePressed() {
-    // Check if the mouse is within the restart button bounds
+    // Verificar se o rato está dentro dos limites do botão de reinício
     if (gameOver && mouseX >= width / 2 - 50 && mouseX <= width / 2 + 50 && mouseY >= height / 2 + 50 && mouseY <= height / 2 + 90) {
         restartGame();
     }
 }
 
 function restartGame() {
-    // Reset game state
+    // Reiniciar estado do jogo
     gameOver = false;
-    score = 0; // Reset score
-    obstacleScale = 0.1; // Reset obstacle scale
-    // Reset obstacle position to a new random location
+    score = 0; // Reiniciar pontuação
+    obstacleScale = 0.1; // Reiniciar escala do obstáculo
+    // Reiniciar posição do obstáculo para uma nova localização aleatória
     obstacleX = random(width / 2);
     obstacleY = random(height / 2);
 
-    // Re-populate animals array to restart the game with animals on the screen
-    populateAnimals(); // Using a function to populate the animals makes the code more maintainable
-
-    // Optionally, you can reset or reinitialize other components or states specific to your game
-    // For example, if you had a timer or a specific game mode, you would reset it here
-    // Note: There's no need to reset PoseNet itself as it continuously tracks poses in real-time
+    // Repovoar array de animais para recomeçar o jogo com animais no ecrã
+    populateAnimals(); // Utilizar uma função para repovoar os animais torna o código mais mantível
 }
 
 function populateAnimals() {
-    animals = []; // Clear the array before populating
+    // Limpe o array antes de preencher
+    animals = [];
     for (let i = 0; i < 10; i++) {
-        let randomIndex = int(random(0, 8)); // Assuming you have 8 different animal images
+        // 8 imagens de animais diferentes
+        let randomIndex = int(random(0, 8));
         let animalImage;
         switch (randomIndex) {
             case 0:
@@ -340,7 +337,9 @@ function populateAnimals() {
                 animalImage = sheep;
                 break;
         }
-        let x = random(width - animalImage.width); // Ensure animal is placed within canvas
+
+        // Garante que o animal seja colocado dentro do canvas
+        let x = random(width - animalImage.width);
         let y = random(height - animalImage.height);
 
         let animalObj = {
